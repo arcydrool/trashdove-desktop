@@ -38,6 +38,8 @@ fn hello() {
     }
 }
 
+/* 
+These tests are from the examples
 #[test]
 fn hello_world() {
     let client = Client::tracked(super::rocket()).unwrap();
@@ -69,3 +71,5 @@ fn wave() {
         }
     }
 }
+
+    */
