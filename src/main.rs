@@ -1,27 +1,29 @@
-#[cfg(test)] mod tests;
+#[macro_use]
+extern crate rocket;
+#[cfg(test)]
+mod tests;
 
-use rocket::fs::{FileServer, relative};
+//use rocket::{Rocket, Request, Build};
+use rocket::response::content; //, status};
+                               //use rocket::http::Status;
+use rocket::fs::{relative, FileServer};
 
-// If we wanted or needed to serve files manually, we'd use `NamedFile`. Always
-// prefer to use `FileServer`!
-mod manual {
-    use std::path::{PathBuf, Path};
-    use rocket::fs::NamedFile;
-
-    #[rocket::get("/second/<path..>")]
-    pub async fn second(path: PathBuf) -> Option<NamedFile> {
-        let mut path = Path::new(super::relative!("static")).join(path);
-        if path.is_dir() {
-            path.push("index.html");
-        }
-
-        NamedFile::open(path).await.ok()
-    }
+#[get("/")]
+fn index() -> content::RawHtml<&'static str> {
+    content::RawHtml(
+        r#"
+    <html>
+    <head></head>
+    <body>text</body>
+    </html>
+    "#,
+    )
 }
 
 #[rocket::launch]
 fn rocket() -> _ {
-    rocket::build()
-        .mount("/", rocket::routes![manual::second])
-        .mount("/", FileServer::new(relative!("td"),rocket::fs::Options::None))
+    rocket::build().mount("/", routes![index]).mount(
+        "/",
+        FileServer::new(relative!("td"), rocket::fs::Options::None),
+    )
 }
