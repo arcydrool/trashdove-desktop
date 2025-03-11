@@ -1,72 +1,75 @@
+use std::fs::File;
+use std::io::Read;
+
 use rocket::local::blocking::Client;
-use rocket::http::{RawStr, Status};
+use rocket::http::Status;
 
-#[test]
-fn hello() {
-    let langs = &["", "ru", "%D1%80%D1%83", "en", "unknown"];
-    let ex_lang = &["Hi", "Привет", "Привет", "Hello", "Hi"];
+use super::rocket;
 
-    let emojis = &["", "on", "true", "false", "no", "yes", "off"];
-    let ex_emoji = &["", "👋 ", "👋 ", "", "", "👋 ", ""];
+#[track_caller]
+fn test_query_file<T> (path: &str, file: T, status: Status)
+    where T: Into<Option<&'static str>>
+{
+    let client = Client::tracked(rocket()).unwrap();
+    let response = client.get(path).dispatch();
+    assert_eq!(response.status(), status);
 
-    let names = &["", "Bob", "Bob+Smith"];
-    let ex_name = &["!", ", Bob!", ", Bob Smith!"];
-
-    let client = Client::tracked(super::rocket()).unwrap();
-    for n in 0..(langs.len() * emojis.len() * names.len()) {
-        let i = n / (emojis.len() * names.len());
-        let j = n % (emojis.len() * names.len()) / names.len();
-        let k = n % (emojis.len() * names.len()) % names.len();
-
-        let (lang, ex_lang) = (langs[i], ex_lang[i]);
-        let (emoji, ex_emoji) = (emojis[j], ex_emoji[j]);
-        let (name, ex_name) = (names[k], ex_name[k]);
-        let expected = format!("{}{}{}", ex_emoji, ex_lang, ex_name);
-
-        let q = |name, s: &str| match s.is_empty() {
-            true => "".into(),
-            false => format!("&{}={}", name, s)
-        };
-
-        let uri = format!("/?{}{}{}", q("lang", lang), q("emoji", emoji), q("name", name));
-        let response = client.get(uri).dispatch();
-        assert_eq!(response.into_string().unwrap(), expected);
-
-        let uri = format!("/?{}{}{}", q("emoji", emoji), q("name", name), q("lang", lang));
-        let response = client.get(uri).dispatch();
-        assert_eq!(response.into_string().unwrap(), expected);
+    let body_data = response.into_bytes();
+    if let Some(filename) = file.into() {
+        let expected_data = read_file_content(filename).expect(filename);
+        assert!(body_data.map_or(false, |s| s == expected_data));
     }
 }
 
-//These tests are from the examples
-#[test]
-fn hello_world() {
-    let client = Client::tracked(super::rocket()).unwrap();
-    let response = client.get("/hello/world").dispatch();
-    assert_eq!(response.into_string(), Some("Hello, world!".into()));
+fn read_file_content(path: &str) -> std::io::Result<Vec<u8>> {
+    let mut file_content = vec![];
+    let mut fp = File::open(path)?;
+    fp.read_to_end(&mut file_content)?;
+    Ok(file_content)
 }
 
 #[test]
-fn hello_mir() {
-    let client = Client::tracked(super::rocket()).unwrap();
-    let response = client.get("/hello/%D0%BC%D0%B8%D1%80").dispatch();
-    assert_eq!(response.into_string(), Some("Привет, мир!".into()));
+fn test_index_html() {
+    test_query_file("/", "td/index.html", Status::Ok);
+    test_query_file("/?v=1", "td/index.html", Status::Ok);
+    test_query_file("/?this=should&be=ignored", "td/index.html", Status::Ok);
+    test_query_file("/second/", "td/index.html", Status::Ok);
+    test_query_file("/second/?v=1", "td/index.html", Status::Ok);
 }
 
 #[test]
-fn wave() {
-    let client = Client::tracked(super::rocket()).unwrap();
-    for &(name, age) in &[("Bob%20Smith", 22), ("Michael", 80), ("A", 0), ("a", 127)] {
-        let uri = format!("/wave/{}/{}", name, age);
-        let real_name = RawStr::new(name).percent_decode_lossy();
-        let expected = format!("👋 Hello, {} year old named {}!", age, real_name);
-        let response = client.get(uri).dispatch();
-        assert_eq!(response.into_string().unwrap(), expected);
+fn test_hidden_index_html() {
+    test_query_file("/hidden/", "td/hidden/index.html", Status::Ok);
+    test_query_file("//hidden//", "td/hidden/index.html", Status::Ok);
+    test_query_file("/second/hidden", "td/hidden/index.html", Status::Ok);
+    test_query_file("/second/hidden/", "td/hidden/index.html", Status::Ok);
+    test_query_file("/second/hidden///", "td/hidden/index.html", Status::Ok);
+}
 
-        for bad_age in &["1000", "-1", "bird"] {
-            let bad_uri = format!("/wave/{}/{}", name, bad_age);
-            let response = client.get(bad_uri).dispatch();
-            assert_eq!(response.status(), Status::UnprocessableEntity);
-        }
-    }
+#[test]
+fn test_hidden_file() {
+    test_query_file("/hidden/hi.txt", "td/hidden/hi.txt", Status::Ok);
+    test_query_file("/second/hidden/hi.txt", "td/hidden/hi.txt", Status::Ok);
+    test_query_file("/hidden/hi.txt?v=1", "td/hidden/hi.txt", Status::Ok);
+    test_query_file("/hidden/hi.txt?v=1&a=b", "td/hidden/hi.txt", Status::Ok);
+    test_query_file("/second/hidden/hi.txt?v=1&a=b", "td/hidden/hi.txt", Status::Ok);
+}
+
+#[test]
+fn test_icon_file() {
+    test_query_file("/favicon.ico", "td/rocket-icon.jpg", Status::Ok);
+    test_query_file("/second/rocket-icon.jpg", "td/rocket-icon.jpg", Status::Ok);
+}
+
+#[test]
+fn test_invalid_path() {
+    test_query_file("/hidden", None, Status::TemporaryRedirect);
+    test_query_file("/thou_shalt_not_exist", None, Status::NotFound);
+    test_query_file("/thou/shalt/not/exist", None, Status::NotFound);
+    test_query_file("/thou/shalt/not/exist?a=b&c=d", None, Status::NotFound);
+}
+
+#[test]
+fn test_leaky_path() {
+    test_query_file("/../Cargo.toml", None,  Status::NotFound);
 }

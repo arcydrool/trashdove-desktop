@@ -1,17 +1,27 @@
-#[macro_use] extern crate rocket;
-
 #[cfg(test)] mod tests;
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+use rocket::fs::{FileServer, relative};
+
+// If we wanted or needed to serve files manually, we'd use `NamedFile`. Always
+// prefer to use `FileServer`!
+mod manual {
+    use std::path::{PathBuf, Path};
+    use rocket::fs::NamedFile;
+
+    #[rocket::get("/second/<path..>")]
+    pub async fn second(path: PathBuf) -> Option<NamedFile> {
+        let mut path = Path::new(super::relative!("static")).join(path);
+        if path.is_dir() {
+            path.push("index.html");
+        }
+
+        NamedFile::open(path).await.ok()
+    }
 }
 
-//#[get("/favicon.ico")]
-//TODO: FAVICON, style.css, war?
-// https://github.com/rwf2/Rocket/blob/master/examples/static-files/src/main.rs
-
-#[launch]
+#[rocket::launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    rocket::build()
+        .mount("/", rocket::routes![manual::second])
+        .mount("/", FileServer::new(relative!("td"),rocket::fs::Options::None))
 }
