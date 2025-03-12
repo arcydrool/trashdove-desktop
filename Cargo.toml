@@ -2,6 +2,14 @@
 name = "trashdove-desktop"
 version = "0.1.0"
 edition = "2021"
+build = "C:/Users/arcyd/source/repos/trashdove-desktop/src/build.rs"
 
 [dependencies]
 rocket = "0.5.1"
+
+[build-dependencies]
+winresource = "0.1.20"
+
+[package.metadata.winresource]
+ProductName = "TrashDove Desktop Service"
+LegalCopyright = "Copyright © Adam Hartline 2025"
