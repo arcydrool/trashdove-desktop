@@ -1,17 +1,10 @@
 
-use rocket::response::content;
+use rocket::response::Redirect;
 use rocket::{Build, Rocket}; 
 use rocket::fs::{relative, FileServer};
 #[get("/")]
-fn index() -> content::RawHtml<&'static str> {
-    content::RawHtml(
-        r#"
-    <html>
-    <head></head>
-    <body>text</body>
-    </html>
-    "#,
-    )
+fn index() -> Redirect {
+    return  Redirect::to("/index.html");
 }
 
 pub fn mount(rocket_builder: Rocket<Build>) -> Rocket<Build> {

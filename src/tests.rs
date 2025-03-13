@@ -29,41 +29,26 @@ fn read_file_content(path: &str) -> std::io::Result<Vec<u8>> {
 }
 
 #[test]
+fn test_short_path() {
+    test_query_file("/",  None, Status::SeeOther);
+    test_query_file("/?v=1", None,Status::SeeOther);
+    test_query_file("/?this=should&be=ignored",None,Status::SeeOther);
+}
+
+#[test]
 fn test_index_html() {
-    test_query_file("/", "td/index.html", Status::Ok);
-    test_query_file("/?v=1", "td/index.html", Status::Ok);
-    test_query_file("/?this=should&be=ignored", "td/index.html", Status::Ok);
-    test_query_file("/second/", "td/index.html", Status::Ok);
-    test_query_file("/second/?v=1", "td/index.html", Status::Ok);
-}
-
-#[test]
-fn test_hidden_index_html() {
-    test_query_file("/hidden/", "td/hidden/index.html", Status::Ok);
-    test_query_file("//hidden//", "td/hidden/index.html", Status::Ok);
-    test_query_file("/second/hidden", "td/hidden/index.html", Status::Ok);
-    test_query_file("/second/hidden/", "td/hidden/index.html", Status::Ok);
-    test_query_file("/second/hidden///", "td/hidden/index.html", Status::Ok);
-}
-
-#[test]
-fn test_hidden_file() {
-    test_query_file("/hidden/hi.txt", "td/hidden/hi.txt", Status::Ok);
-    test_query_file("/second/hidden/hi.txt", "td/hidden/hi.txt", Status::Ok);
-    test_query_file("/hidden/hi.txt?v=1", "td/hidden/hi.txt", Status::Ok);
-    test_query_file("/hidden/hi.txt?v=1&a=b", "td/hidden/hi.txt", Status::Ok);
-    test_query_file("/second/hidden/hi.txt?v=1&a=b", "td/hidden/hi.txt", Status::Ok);
+    test_query_file("/index.html", "td/index.html", Status::Ok);
+    test_query_file("/index.html?v=1", "td/index.html", Status::Ok);
+    test_query_file("/index.html?this=should&be=ignored", "td/index.html", Status::Ok);
 }
 
 #[test]
 fn test_icon_file() {
-    test_query_file("/favicon.ico", "td/rocket-icon.jpg", Status::Ok);
-    test_query_file("/second/rocket-icon.jpg", "td/rocket-icon.jpg", Status::Ok);
+    test_query_file("/favicon.ico", "td/favicon.ico", Status::Ok);
 }
 
 #[test]
 fn test_invalid_path() {
-    test_query_file("/hidden", None, Status::TemporaryRedirect);
     test_query_file("/thou_shalt_not_exist", None, Status::NotFound);
     test_query_file("/thou/shalt/not/exist", None, Status::NotFound);
     test_query_file("/thou/shalt/not/exist?a=b&c=d", None, Status::NotFound);

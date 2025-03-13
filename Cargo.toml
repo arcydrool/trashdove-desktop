@@ -10,6 +10,15 @@ rocket = "0.5.1"
 [build-dependencies]
 winresource = "0.1.20"
 
+[dev-dependencies]
+tokio = "1.44.0"
+cucumber = "0.20"
+futures = "0.3"
+
 [package.metadata.winresource]
 ProductName = "TrashDove Desktop Service"
 LegalCopyright = "Copyright © Adam Hartline 2025"
+
+[[test]]
+name = "start"
+harness = false  # allows Cucumber to print output instead of libtest
