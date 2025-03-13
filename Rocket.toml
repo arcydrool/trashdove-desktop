@@ -1,0 +1,7 @@
+[default]
+address = "127.0.0.1"
+port = 7245
+workers = 3
+keep_alive = 5
+read_timeout = 5
+write_timeout = 5
