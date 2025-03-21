@@ -7,6 +7,13 @@ build = "C:/Users/arcyd/source/repos/trashdove-desktop/src/build.rs"
 [dependencies]
 rocket = "0.5.1"
 
+[dependencies.uuid]
+version = "1.16.0"
+# Lets you generate random UUIDs
+features = [
+    "v4",
+]
+
 [build-dependencies]
 winresource = "0.1.20"
 
