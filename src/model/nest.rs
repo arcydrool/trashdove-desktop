@@ -7,7 +7,7 @@ struct Nest {
     date_modified: String,
     name: String,
     organization: String,
-    location: String,
+    geofix: String,
     email: String,
     sign_in_count: u64,
 }
