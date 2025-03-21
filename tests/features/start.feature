@@ -1,6 +1,6 @@
-Feature: Eating too much cucumbers may not be good for you
+Feature: Starting a trashdove server
     
-  Scenario: Eating a few isn't a problem
-    Given Alice is hungry
-    When she eats 3 cucumbers
-    Then she is full
+  Scenario: First starting and logging in
+    Given the nest is empty
+    When I visit the index
+    Then I should see a login
