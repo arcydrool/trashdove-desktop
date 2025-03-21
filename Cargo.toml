@@ -5,6 +5,7 @@ edition = "2021"
 build = "C:/Users/arcyd/source/repos/trashdove-desktop/src/build.rs"
 
 [dependencies]
+dirs = "6.0.0"
 rocket = "0.5.1"
 
 [dependencies.uuid]
